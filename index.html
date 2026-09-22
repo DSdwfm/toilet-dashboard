@@ -61,10 +61,10 @@ button,select,input{font:inherit}.pill{border:1px solid var(--line);background:#
   <section class="kpis">
     <div class="card kpi"><div class="label">선택기간 발생</div><div class="value" id="kTotal">-</div><div class="sub" id="kTotalSub"></div></div>
     <div class="card kpi"><div class="label">조회주 발생</div><div class="value" id="kWeek">-</div><div class="sub" id="kWeekSub"></div></div>
-    <div class="card kpi candidate-card" title="단순 누적 순위가 아니라, 누적 5회 이상이면서 서로 다른 4주 이상 반복 발생한 화장실입니다.">
+    <div class="card kpi candidate-card" title="최근 8개 보고주 기준으로 6회 이상 발생하면서, 같은 최근 8주 안에서 4개 주 이상 반복 발생한 화장실입니다.">
       <div class="label">우선 점검 후보 <span id="kWatchCount"></span></div>
       <div class="candidate-list" id="candidateList"></div>
-      <div class="sub">순위와 무관 · 누적 5회 이상 AND 서로 다른 4주 이상 발생</div>
+      <div class="sub">최근 8주 기준 · 6회 이상 + 4개 주 이상 반복 발생</div>
     </div>
   </section>
 
@@ -129,11 +129,13 @@ function renderTop(rows){const arr=Object.entries(aggregate(rows)).sort((a,b)=>b
 function renderTrend(rows){const w=grouped(rows),svg=document.getElementById("trend"),W=900,H=260,p={l:44,r:20,t:18,b:42},max=Math.max(1,...w.map(x=>x.total)),pts=w.map((x,i)=>({x:p.l+(W-p.l-p.r)*(w.length===1?.5:i/(w.length-1)),y:p.t+(H-p.t-p.b)*(1-x.total/max),...x}));let s=`<line class="axis" x1="${p.l}" y1="${H-p.b}" x2="${W-p.r}" y2="${H-p.b}"/>`;[0,.25,.5,.75,1].forEach(q=>{const y=p.t+(H-p.t-p.b)*q,v=Math.round(max*(1-q));s+=`<line class="axis" x1="${p.l}" y1="${y}" x2="${W-p.r}" y2="${y}" opacity=".35"/><text class="axisText" x="8" y="${y+4}">${v}</text>`});s+=`<polyline class="line" points="${pts.map(x=>`${x.x},${x.y}`).join(" ")}"/>`;pts.forEach((x,i)=>{s+=`<circle class="dot" cx="${x.x}" cy="${x.y}" r="4"/><text class="valueText" text-anchor="middle" x="${x.x}" y="${x.y-9}">${x.total}</text>`;if(i===0||i===pts.length-1||i%2===0)s+=`<text class="axisText" text-anchor="middle" x="${x.x}" y="${H-18}">${fmt(x.ws)}</text>`});svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.innerHTML=s}
 function renderSelect(){const s=document.getElementById("weekSelect"),weeks=DATA.weeks.slice().sort((a,b)=>b.start.localeCompare(a.start));s.innerHTML=weeks.map(w=>`<option value="${w.start}">${fmt(w.start)} ~ ${fmt(w.end)}</option>`).join("");if(!selectedWeek)selectedWeek=weeks[0]?.start||"";s.value=selectedWeek;s.onchange=e=>{selectedWeek=e.target.value;refresh()}}
 function analyze(){
-  const arr=Object.entries(aggregate(DATA.rows)).sort((a,b)=>b[1].count-a[1].count);
-  const watch=arr.filter(([k,v])=>v.count>=5&&v.weeks.size>=4);
+  const recentWeeks=allWeekStarts().slice(-8);
+  const recentRows=DATA.rows.filter(r=>recentWeeks.includes(r.week_start));
+  const arr=Object.entries(aggregate(recentRows)).sort((a,b)=>b[1].count-a[1].count);
+  const watch=arr.filter(([k,v])=>v.count>=6&&v.weeks.size>=4);
   document.getElementById("kWatchCount").textContent=`(${watch.length}곳)`;
   const list=document.getElementById("candidateList");
-  list.innerHTML=watch.map(([k,v])=>`<button class="candidate-chip" data-toilet="${k}" title="${k} 주별 추이 보기">${k}<small>${v.count}회 · ${v.weeks.size}주</small></button>`).join("");
+  list.innerHTML=watch.map(([k,v])=>`<button class="candidate-chip" data-toilet="${k}" title="${k} 주별 추이 보기">${k}<small>최근8주 ${v.count}회 · ${v.weeks.size}주</small></button>`).join("");
   list.querySelectorAll("[data-toilet]").forEach(btn=>btn.onclick=()=>selectToilet(btn.dataset.toilet));
   if(!selectedToilet&&watch.length)selectedToilet=watch[0][0];
 }
