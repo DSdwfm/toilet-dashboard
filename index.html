@@ -126,7 +126,7 @@ const fmtFull=s=>{const d=new Date(s+"T00:00:00");return `${d.getFullYear()}.${S
 const areaOf=r=>r.area||"일반";
 const key=r=>`${r.building}동 ${r.floor}${areaOf(r)==="셰어라운지"?" 셰어라운지":""} ${r.gender}`;
 const displayLabel=s=>s.replace(/ 남$/, " 남자").replace(/ 여$/, " 여자");
-const parseKey=s=>{const m=s.match(/^([ABCN])동 (지하|\\d층)(?: (셰어라운지))? (남|여)$/);return m?{building:m[1],floor:m[2],area:m[3]||"일반",gender:m[4]}:null};
+const parseKey=s=>{const m=s.match(/^([ABCN])동 (지하|\d층)(?: (셰어라운지))? (남|여)$/);return m?{building:m[1],floor:m[2],area:m[3]||"일반",gender:m[4]}:null};
 const isNewFields=(building,floor,area,gender)=>(building==="B"&&floor==="지하"&&area==="일반"&&gender==="여")||(building==="B"&&floor==="4층"&&area==="셰어라운지"&&(gender==="남"||gender==="여"));
 const isNewKey=s=>{const p=parseKey(s);return !!p&&isNewFields(p.building,p.floor,p.area,p.gender)};
 const sum=a=>a.reduce((x,y)=>x+y,0);
